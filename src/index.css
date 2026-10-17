@@ -7,3 +7,37 @@ body {
   background: #0B1020;
   color: #F3F4F6;
 }
+
+/* Shared controls for the reading workspace. */
+@layer components {
+  .chapterly-panel { @apply rounded-3xl border border-white/10 bg-white/5 p-5 sm:p-7; }
+  .chapterly-title { @apply mt-2 font-[Playfair_Display] text-4xl font-bold sm:text-5xl; }
+  .chapterly-eyebrow { @apply text-xs font-semibold tracking-[0.18em] text-purple-300; }
+  .chapterly-section-title { @apply flex items-center gap-3 text-xl font-semibold; }
+  .chapterly-section-title svg { @apply h-5 w-5 text-purple-300; }
+  .chapterly-label { @apply mb-2 block text-sm font-medium text-gray-300; }
+  .chapterly-input { @apply min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-black/20 px-4 py-3 text-white outline-none transition-colors focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20; color-scheme: dark; }
+  .chapterly-primary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-purple-500 disabled:cursor-default disabled:opacity-50; }
+  .chapterly-secondary { @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-gray-200 transition-colors hover:bg-white/10; }
+  .chapterly-switch { @apply relative h-11 w-14 shrink-0 cursor-pointer appearance-none rounded-full border-8 border-transparent bg-white/20 bg-clip-padding transition-colors checked:bg-purple-500; }
+  .chapterly-switch::after { content: ''; @apply absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white transition-transform; }
+  .chapterly-switch:checked::after { transform: translateX(12px); }
+}
+
+.chapterly-workspace :is(button, input, summary, a):focus-visible {
+  outline: 2px solid #d8b4fe;
+  outline-offset: 3px;
+}
+.chapterly-workspace[data-reduce-motion="true"] *,
+.chapterly-workspace[data-reduce-motion="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chapterly-workspace *, .chapterly-workspace *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

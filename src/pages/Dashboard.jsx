@@ -1,20 +1,55 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Star } from "lucide-react";
 import books from "../data/books";
+import QuoteVault from "../components/QuoteVault";
+import LibraryBookCover from "../components/LibraryBookCover";
+import ReadingStats from "../components/ReadingStats";
+import SettingsPanel from "../components/SettingsPanel";
+import { loadSettings, loadSessions } from "../data/reading";
+
+const sampleBooks = ["Fourth Wing", "The Hobbit", "The Night Circus", "Atomic Habits"]
+  .map((title) => books.find((book) => book.title === title));
 
 function Dashboard() {
+  const [settings, setSettings] = useState(loadSettings);
+  const [sessions, setSessions] = useState(loadSessions);
+
+  function saveSettings(next) {
+    try {
+      localStorage.setItem("chapterlySettings", JSON.stringify(next));
+      setSettings(next);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function addSession(session) {
+    try {
+      const next = [session, ...sessions];
+      localStorage.setItem("chapterlySessions", JSON.stringify(next));
+      setSessions(next);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   // -----------------------------
   // LIBRARY
   // -----------------------------
 
-  const [libraryBooks, setLibraryBooks] = useState([]);
-
-  useEffect(() => {
-    const savedBooks =
-      JSON.parse(localStorage.getItem("myLibrary")) || [];
-
-    setLibraryBooks(savedBooks);
-  }, []);
+  const [libraryBooks] = useState(() => {
+    try {
+      const savedBooks = JSON.parse(localStorage.getItem("myLibrary"));
+      return Array.isArray(savedBooks) ? savedBooks : [];
+    } catch {
+      return [];
+    }
+  });
+  const showingSamples = libraryBooks.length === 0 && settings.showSamples;
+  const displayedBooks = showingSamples ? sampleBooks : libraryBooks;
 
 
   // -----------------------------
@@ -39,7 +74,7 @@ function Dashboard() {
 
 
   return (
-    <div className="min-h-screen bg-[#0B1020] text-white p-8">
+    <div className="chapterly-workspace min-h-screen bg-[#0B1020] text-white p-4 sm:p-8" data-reduce-motion={settings.reduceMotion}>
 
       <div className="grid lg:grid-cols-4 gap-8">
 
@@ -48,9 +83,9 @@ function Dashboard() {
         {/* SIDEBAR */}
         {/* ========================================= */}
 
-        <div className="bg-white/5 border border-white/10 rounded-[30px] p-8">
+        <div className="h-fit bg-white/5 border border-white/10 rounded-[30px] p-5 xl:p-8">
 
-          <h1 className="text-5xl font-bold mb-10">
+          <h1 className="text-4xl xl:text-5xl font-bold mb-10">
             Chapterly
           </h1>
 
@@ -58,17 +93,19 @@ function Dashboard() {
 
             {menuItems.map((item) => (
 
-              <div
+              <button
+                type="button"
                 key={item}
                 onClick={() => setActiveTab(item)}
-                className={`px-5 py-4 rounded-2xl cursor-pointer transition ${
+                aria-pressed={activeTab === item}
+                className={`w-full text-left px-5 py-4 rounded-2xl cursor-pointer transition focus-visible:outline-2 focus-visible:outline-purple-300 ${
                   activeTab === item
                     ? "bg-purple-500/20 text-purple-300"
                     : "hover:bg-white/5 text-gray-300"
                 }`}
               >
                 {item}
-              </div>
+              </button>
 
             ))}
 
@@ -81,7 +118,7 @@ function Dashboard() {
         {/* RIGHT SIDE */}
         {/* ========================================= */}
 
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
 
 
           {/* ========================================= */}
@@ -92,64 +129,55 @@ function Dashboard() {
 
             <div>
 
+              <p className="mb-3 break-words text-purple-200">Welcome back, {settings.name}.</p>
               <h1 className="text-4xl font-bold mb-8">
                 Your Library
               </h1>
 
-              {libraryBooks.length === 0 ? (
-
-                <div className="bg-white/5 border border-white/10 rounded-[30px] p-10 text-center">
-
-                  <h2 className="text-2xl font-bold">
-                    Your library is empty 📚
-                  </h2>
-
-                  <p className="text-gray-400 mt-3">
-                    Go to Explore and add some books!
-                  </p>
-
-                </div>
-
-              ) : (
-
-                <div className="grid md:grid-cols-2 gap-6">
-
-                  {libraryBooks.map((book) => (
-
-                    <div
-                      key={book.id}
-                      className="bg-white/5 p-6 rounded-[30px] border border-white/10"
-                    >
-
-                      <img
-                        src={book.image}
-                        alt={book.title}
-                        className="h-72 w-full object-cover rounded-2xl"
-                      />
-
-                      <h2 className="text-2xl font-bold mt-4">
-                        {book.title}
-                      </h2>
-
-                      <p className="text-gray-400">
-                        {book.author}
-                      </p>
-
-                      <p className="text-purple-300 mt-2">
-                        {book.genre}
-                      </p>
-
-                      <p className="text-yellow-400 mt-2">
-                        ⭐ {book.rating}
-                      </p>
-
-                    </div>
-
-                  ))}
-
-                </div>
-
+              {showingSamples && (
+                <p className="mb-6 text-gray-400">
+                  A little shelf inspiration. These sample books are placeholders;
+                  add your own favorites to make this library yours.
+                </p>
               )}
+
+              <Link
+                to="/explore"
+                className="mb-8 inline-flex min-h-11 items-center rounded-xl bg-purple-600 px-5 py-3 font-medium transition hover:bg-purple-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-300"
+              >
+                Explore books
+              </Link>
+
+              {displayedBooks.length === 0 && (
+                <div className="chapterly-panel text-center">
+                  <h2 className="text-xl font-semibold">Room for your next favorite</h2>
+                  <p className="mt-3 text-gray-400">Add a book from Explore to start your personal library.</p>
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 gap-6">
+                {displayedBooks.map((book, index) => (
+                  <article
+                    key={book.id}
+                    className="bg-white/5 p-6 rounded-[30px] border border-white/10"
+                  >
+                    <LibraryBookCover book={book} sample={showingSamples} index={index} />
+                    {showingSamples && (
+                      <span className="mt-4 inline-block rounded-full bg-purple-500/15 px-3 py-1 text-xs font-medium text-purple-200">
+                        Sample book
+                      </span>
+                    )}
+                    <h2 className="text-2xl font-bold mt-4">{book.title}</h2>
+                    <p className="text-gray-400">{book.author}</p>
+                    <p className="text-purple-300 mt-2">{book.genre}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-gray-400">{book.description}</p>
+                    <p className="flex items-center gap-2 text-yellow-400 mt-3">
+                      <Star size={18} fill="currentColor" aria-hidden="true" />
+                      <span>{book.rating} / 5 <span className="text-gray-400">catalog rating</span></span>
+                    </p>
+                  </article>
+                ))}
+              </div>
 
             </div>
 
@@ -237,82 +265,22 @@ function Dashboard() {
           {/* ========================================= */}
 
           {activeTab === "Reading Stats" && (
-
-            <div>
-
-              <h1 className="text-4xl font-bold mb-8">
-                Reading Stats
-              </h1>
-
-              <div className="grid md:grid-cols-3 gap-6">
-
-                <div className="bg-white/5 border border-white/10 rounded-[30px] p-6">
-
-                  <p className="text-gray-400">
-                    Books Read
-                  </p>
-
-                  <h2 className="text-4xl font-bold mt-3">
-                    24
-                  </h2>
-
-                </div>
-
-
-                <div className="bg-white/5 border border-white/10 rounded-[30px] p-6">
-
-                  <p className="text-gray-400">
-                    Reading Streak
-                  </p>
-
-                  <h2 className="text-4xl font-bold mt-3">
-                    🔥 18
-                  </h2>
-
-                  <p className="text-gray-400 mt-2">
-                    days
-                  </p>
-
-                </div>
-
-
-                <div className="bg-white/5 border border-white/10 rounded-[30px] p-6">
-
-                  <p className="text-gray-400">
-                    Favorite Genre
-                  </p>
-
-                  <h2 className="text-3xl font-bold mt-3">
-                    Fantasy
-                  </h2>
-
-                </div>
-
-              </div>
-
-            </div>
-
+            <ReadingStats
+              settings={settings}
+              sessions={sessions}
+              onAddSession={addSession}
+              libraryBooks={libraryBooks}
+              onEditGoals={() => setActiveTab("Settings")}
+            />
           )}
 
-
-          {/* ========================================= */}
-          {/* SETTINGS */}
-          {/* ========================================= */}
-
           {activeTab === "Settings" && (
-
-            <div className="bg-white/5 rounded-[30px] p-8">
-
-              <h1 className="text-4xl font-bold">
-                Settings
-              </h1>
-
-              <p className="text-gray-400 mt-5">
-                Chapterly settings will be available here.
-              </p>
-
-            </div>
-
+            <SettingsPanel
+              settings={settings}
+              onSave={saveSettings}
+              libraryBooks={libraryBooks}
+              sessions={sessions}
+            />
           )}
 
         </div>
@@ -861,142 +829,6 @@ function generateRecommendation(input) {
 
   };
 
-}
-
-
-/* ================================================= */
-/* QUOTE VAULT                                       */
-/* ================================================= */
-
-function QuoteVault() {
-
-  const [bookName, setBookName] = useState("");
-
-  const [author, setAuthor] = useState("");
-
-  const [rating, setRating] = useState("");
-
-  const [quote, setQuote] = useState("");
-
-
-  return (
-
-    <div>
-
-      <h1 className="text-4xl font-bold mb-8">
-        ✍️ Quote Vault
-      </h1>
-
-
-      <div className="bg-white/5 border border-white/10 rounded-[30px] p-8">
-
-
-        {/* BOOK NAME */}
-
-        <label className="text-gray-300">
-          Book Name
-        </label>
-
-        <input
-          type="text"
-          value={bookName}
-          onChange={(e) =>
-            setBookName(e.target.value)
-          }
-          placeholder="Enter book name..."
-          className="w-full mt-2 p-4 rounded-2xl bg-white/5 border border-white/10 outline-none"
-        />
-
-
-        {/* AUTHOR */}
-
-        <label className="block text-gray-300 mt-6">
-          Author
-        </label>
-
-        <input
-          type="text"
-          value={author}
-          onChange={(e) =>
-            setAuthor(e.target.value)
-          }
-          placeholder="Enter author..."
-          className="w-full mt-2 p-4 rounded-2xl bg-white/5 border border-white/10 outline-none"
-        />
-
-
-        {/* RATING */}
-
-        <label className="block text-gray-300 mt-6">
-          Rating
-        </label>
-
-        <input
-          type="number"
-          min="0"
-          max="5"
-          step="0.1"
-          value={rating}
-          onChange={(e) =>
-            setRating(e.target.value)
-          }
-          placeholder="Rate the book out of 5..."
-          className="w-full mt-2 p-4 rounded-2xl bg-white/5 border border-white/10 outline-none"
-        />
-
-
-        {/* QUOTE */}
-
-        <label className="block text-gray-300 mt-6">
-          Your Quotes / Notes
-        </label>
-
-        <textarea
-          value={quote}
-          onChange={(e) =>
-            setQuote(e.target.value)
-          }
-          placeholder="Write your favorite quotes, thoughts or notes here..."
-          rows="8"
-          className="w-full mt-2 p-4 rounded-2xl bg-white/5 border border-white/10 outline-none resize-none"
-        />
-
-
-        {/* PREVIEW */}
-
-        <div className="mt-8 bg-black/20 rounded-2xl p-6">
-
-          <h2 className="text-xl font-bold">
-            {bookName || "Your Book"}
-          </h2>
-
-          <p className="text-gray-400 mt-1">
-            {author || "Author"}
-          </p>
-
-          {rating && (
-
-            <p className="text-yellow-400 mt-2">
-              ⭐ {rating}/5
-            </p>
-
-          )}
-
-          {quote && (
-
-            <p className="italic text-gray-300 mt-5 whitespace-pre-wrap">
-              "{quote}"
-            </p>
-
-          )}
-
-        </div>
-
-      </div>
-
-    </div>
-
-  );
 }
 
 
